@@ -16,6 +16,14 @@ export async function generateSummary(prompt) {
     return "Could not generate content. Please try again later.";
   }
 }
+export async function generateSection(prompt) {
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const result = await model.generateContent(
+    `Generate section for a resume based on: ${prompt}. 
+    Use bullet points and focus on achievements.`
+  );
+  return (await result.response).text();
+}
 
 // More specialized generators
 export async function generateExperience(prompt) {

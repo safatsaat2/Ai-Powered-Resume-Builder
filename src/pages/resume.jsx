@@ -1,385 +1,584 @@
-import { useState } from "react";
-import {
-  generateSummary,
-  generateExperience,
-  improveResumeSection,
-} from "../utils/gemini";
+import { useState, useRef } from 'react';
+import { generateSummary, generateExperience, improveResumeSection, generateSection } from '../utils/gemini';
+import { exportToPDF } from '../utils/exportResume';
 
 export default function Resume() {
   const [resume, setResume] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    summary: "",
-    skills: "",
-    experience: "",
-    education: "",
-    projects: "",
-    certifications: "",
-    languages: "",
-    references: "",
-    customSections: [],
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    summary: '',
+    skills: '',
     experiences: [
-    {
-      id: 1,
-      company: '',
-      position: '',
-      duration: '',
-      description: ''
-    }
-  ]
+      {
+        id: Date.now(),
+        company: '',
+        position: '',
+        duration: '',
+        description: ''
+      }
+    ],
+    education: '',
+    projects: '',
+    certifications: '',
+    languages: ''
   });
 
   const [loading, setLoading] = useState({
     summary: false,
     experience: false,
     education: false,
-    improve: false,
+    projects: false,
+    improve: false
   });
 
-  const [activeTab, setActiveTab] = useState("form");
-  const [exportFormat, setExportFormat] = useState("pdf");
+  const [activeTab, setActiveTab] = useState('form');
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [selectedTemplate, setSelectedTemplate] = useState('professional');
+  const previewRef = useRef(null);
 
   const handleChange = (e) => {
-    setResume({ ...resume, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setResume(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleGenerateSummary = async () => {
-    setLoading({ ...loading, summary: true });
-    try {
-      const prompt = `Write a professional 3-sentence summary for ${
-        resume.name || "a candidate"
-      } who has these skills: ${
-        resume.skills || "various technical and soft skills"
-      }. Focus on achievements and use professional tone.`;
-      const aiSummary = await generateSummary(prompt);
-      setResume({ ...resume, summary: aiSummary });
-    } catch (error) {
-      alert("Failed to generate summary. Please try again.");
+  const handleExperienceChange = (id, field, value) => {
+    setResume(prev => ({
+      ...prev,
+      experiences: prev.experiences.map(exp => 
+        exp.id === id ? { ...exp, [field]: value } : exp
+      )
+    }));
+  };
+
+  const addExperience = () => {
+    setResume(prev => ({
+      ...prev,
+      experiences: [
+        ...prev.experiences,
+        {
+          id: Date.now(),
+          company: '',
+          position: '',
+          duration: '',
+          description: ''
+        }
+      ]
+    }));
+  };
+
+  const removeExperience = (id) => {
+    if (resume.experiences.length > 1) {
+      setResume(prev => ({
+        ...prev,
+        experiences: prev.experiences.filter(exp => exp.id !== id)
+      }));
     }
-    setLoading({ ...loading, summary: false });
   };
 
-  const handleGenerateExperience = async () => {
-    setLoading({ ...loading, experience: true });
+  const handleGenerate = async (section, prompt) => {
+    setLoading(prev => ({ ...prev, [section]: true }));
     try {
-      const prompt = `${
-        resume.experience || "No experience provided yet."
-      } Skills: ${resume.skills || "Various skills"}`;
-      const aiExperience = await generateExperience(prompt);
-      setResume({ ...resume, experience: aiExperience });
+      let generatedContent;
+      
+      if (section === 'summary') {
+        generatedContent = await generateSummary(prompt);
+      } else if (section === 'experiences') {
+        generatedContent = await generateExperience(prompt);
+      } else {
+        generatedContent = await generateSection(section, prompt);
+      }
+
+      setResume(prev => ({ 
+        ...prev, 
+        [section]: section === 'experiences' ? 
+          { ...prev.experiences[0], description: generatedContent } : 
+          generatedContent 
+      }));
     } catch (error) {
-      alert("Failed to generate experience. Please try again.");
+      alert(`Failed to generate ${section}. Please try again.`);
+      console.error(error);
     }
-    setLoading({ ...loading, experience: false });
+    setLoading(prev => ({ ...prev, [section]: false }));
   };
 
-  const handleGenerateEducation = async () => {
-    setLoading({ ...loading, education: true });
+  const handleImproveSection = async (section, content) => {
+    setLoading(prev => ({ ...prev, improve: true }));
     try {
-      const prompt = `Format this education section professionally for a resume: ${
-        resume.education || "No education details provided yet."
-      }`;
-      const aiEducation = await generateSummary(prompt);
-      setResume({ ...resume, education: aiEducation });
-    } catch (error) {
-      alert("Failed to generate education section. Please try again.");
-    }
-    setLoading({ ...loading, education: false });
-  };
-
-  const handleImproveSection = async (section) => {
-    setLoading({ ...loading, improve: true });
-    try {
-      const improvedContent = await improveResumeSection(
-        section,
-        resume[section] || `No ${section} content yet.`
-      );
-      setResume({ ...resume, [section]: improvedContent });
+      const improvedContent = await improveResumeSection(section, content || `No ${section} content yet.`);
+      setResume(prev => ({ ...prev, [section]: improvedContent }));
     } catch (error) {
       alert(`Failed to improve ${section}. Please try again.`);
     }
-    setLoading({ ...loading, improve: false });
+    setLoading(prev => ({ ...prev, improve: false }));
   };
 
-  const handleExport = () => {
-    alert(`Exporting resume as ${exportFormat.toUpperCase()}...`);
-    // In a real app, you would implement actual export functionality here
+  const handleExport = async () => {
+    if (exportFormat === 'pdf') {
+      await exportToPDF(previewRef.current, `${resume.name || 'my'}-resume`);
+    } else {
+      // Implement other export formats here
+      alert(`${exportFormat.toUpperCase()} export will be implemented soon`);
+    }
   };
-const addExperience = () => {
-  setResume({
-    ...resume,
-    experiences: [...resume.experiences, {
-      id: Date.now(),
-      company: '',
-      position: '',
-      duration: '',
-      description: ''
-    }]
-  });
-};
-const removeExperience = (id) => {
-  setResume({
-    ...resume,
-    experiences: resume.experiences.filter(exp => exp.id !== id)
-  });
-};
+
+  const templates = [
+    { id: 'professional', name: 'Professional', class: 'bg-white text-gray-800' },
+    { id: 'modern', name: 'Modern', class: 'bg-gray-50 text-gray-800' },
+    { id: 'creative', name: 'Creative', class: 'bg-indigo-50 text-gray-800' }
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">AI Resume Builder</h1>
+    <div className="max-w-7xl mx-auto p-4 md:p-6">
+      <header className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-indigo-700">AI Resume Builder</h1>
+        <p className="text-gray-600">Create a professional resume in minutes</p>
+      </header>
 
       {/* Navigation Tabs */}
       <div className="flex border-b mb-6">
         <button
-          className={`py-2 px-4 font-medium ${
-            activeTab === "form"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600"
-          }`}
-          onClick={() => setActiveTab("form")}
+          className={`py-2 px-4 font-medium ${activeTab === 'form' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-600'}`}
+          onClick={() => setActiveTab('form')}
         >
           Build Resume
         </button>
         <button
-          className={`py-2 px-4 font-medium ${
-            activeTab === "preview"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600"
-          }`}
-          onClick={() => setActiveTab("preview")}
+          className={`py-2 px-4 font-medium ${activeTab === 'preview' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-600'}`}
+          onClick={() => setActiveTab('preview')}
         >
           Preview
         </button>
+        <button
+          className={`py-2 px-4 font-medium ${activeTab === 'templates' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-600'}`}
+          onClick={() => setActiveTab('templates')}
+        >
+          Templates
+        </button>
       </div>
 
-      {activeTab === "form" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Left Column - Form */}
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Your Information</h2>
+      {activeTab === 'form' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Personal Info */}
+          <div className="space-y-6 lg:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-600">Personal Information</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name*</label>
+                  <input
+                    className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                    name="name"
+                    value={resume.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Full Name
-                </label>
-                <input
-                  className="w-full border p-2 rounded"
-                  name="name"
-                  placeholder="John Doe"
-                  value={resume.name}
-                  onChange={handleChange}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email*</label>
+                  <input
+                    className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                    name="email"
+                    type="email"
+                    value={resume.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  className="w-full border p-2 rounded"
-                  name="email"
-                  placeholder="john@example.com"
-                  value={resume.email}
-                  onChange={handleChange}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone</label>
+                  <input
+                    className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                    name="phone"
+                    value={resume.phone}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <input
-                  className="w-full border p-2 rounded"
-                  name="phone"
-                  placeholder="(123) 456-7890"
-                  value={resume.phone}
-                  onChange={handleChange}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Address</label>
+                  <input
+                    className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                    name="address"
+                    value={resume.address}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Professional Summary
-                </label>
-                <textarea
-                  className="w-full border p-2 rounded min-h-[100px]"
-                  name="summary"
-                  placeholder="Experienced professional with..."
-                  value={resume.summary}
-                  onChange={handleChange}
-                />
-                <button
-                  className="mt-2 !bg-blue-900 text-white px-3 py-1 rounded text-sm"
-                  onClick={handleGenerateSummary}
-                  disabled={loading.summary}
-                >
-                  {loading.summary ? "Generating..." : "AI Generate Summary"}
-                </button>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Professional Summary</label>
+                  <textarea
+                    className="w-full border p-2 rounded min-h-[120px] focus:ring-2 focus:ring-indigo-200"
+                    name="summary"
+                    value={resume.summary}
+                    onChange={handleChange}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                      onClick={() => handleGenerate(
+                        'summary', 
+                        `Write a professional 3-sentence summary for ${resume.name || 'a candidate'} with skills: ${resume.skills || 'various skills'}. Focus on achievements.`
+                      )}
+                      disabled={loading.summary}
+                    >
+                      {loading.summary ? 'Generating...' : 'AI Generate'}
+                    </button>
+                    <button
+                      className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                      onClick={() => handleImproveSection('summary', resume.summary)}
+                      disabled={loading.improve}
+                    >
+                      {loading.improve ? 'Improving...' : 'Improve'}
+                    </button>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Skills</label>
-                <textarea
-                  className="w-full border p-2 rounded min-h-[80px]"
-                  name="skills"
-                  placeholder="JavaScript, React, Project Management..."
-                  value={resume.skills}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label>Projects</label>
-                <textarea
-                  name="projects"
-                  value={resume.projects}
-                  onChange={handleChange}
-                />
-                <button onClick={() => handleGenerateSection("projects")}>
-                  AI Generate Projects
-                </button>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-600">Skills & Languages</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Skills (comma separated)</label>
+                  <textarea
+                    className="w-full border p-2 rounded min-h-[80px] focus:ring-2 focus:ring-indigo-200"
+                    name="skills"
+                    value={resume.skills}
+                    onChange={handleChange}
+                    placeholder="JavaScript, React, Project Management..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Languages</label>
+                  <input
+                    className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                    name="languages"
+                    value={resume.languages}
+                    onChange={handleChange}
+                    placeholder="English (Fluent), Spanish (Basic)..."
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Form Continued */}
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Experience & Education</h2>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Work Experience
-              </label>
-              <textarea
-                className="w-full border p-2 rounded min-h-[150px]"
-                name="experience"
-                placeholder="Company Name, Position\n- Achievements..."
-                value={resume.experience}
-                onChange={handleChange}
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  className="!bg-green-600 text-white px-3 py-1 rounded text-sm"
-                  onClick={handleGenerateExperience}
-                  disabled={loading.experience}
+          {/* Middle Column - Experience & Education */}
+          <div className="space-y-6 lg:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-indigo-600">Work Experience</h2>
+                <button 
+                  className="text-indigo-600 hover:text-indigo-800 text-sm"
+                  onClick={addExperience}
                 >
-                  {loading.experience
-                    ? "Generating..."
-                    : "AI Generate Experience"}
+                  + Add Experience
                 </button>
-                <button
-                  className="!bg-purple-600 text-white px-3 py-1 rounded text-sm"
-                  onClick={() => handleImproveSection("experience")}
-                  disabled={loading.improve}
-                >
-                  {loading.improve ? "Improving..." : "Improve Section"}
-                </button>
+              </div>
+              
+              <div className="space-y-6">
+                {resume.experiences.map((exp, index) => (
+                  <div key={exp.id} className="border-l-2 border-indigo-200 pl-4 relative">
+                    {index > 0 && (
+                      <button 
+                        className="absolute top-0 right-0 text-red-500 hover:text-red-700"
+                        onClick={() => removeExperience(exp.id)}
+                      >
+                        ×
+                      </button>
+                    )}
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Company*</label>
+                        <input
+                          className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                          value={exp.company}
+                          onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Position*</label>
+                          <input
+                            className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                            value={exp.position}
+                            onChange={(e) => handleExperienceChange(exp.id, 'position', e.target.value)}
+                            required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Duration</label>
+                          <input
+                            className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                            value={exp.duration}
+                            onChange={(e) => handleExperienceChange(exp.id, 'duration', e.target.value)}
+                            placeholder="Jan 2020 - Present"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <textarea
+                          className="w-full border p-2 rounded min-h-[100px] focus:ring-2 focus:ring-indigo-200"
+                          value={exp.description}
+                          onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)}
+                          placeholder="Describe your responsibilities and achievements..."
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                            onClick={() => handleGenerate(
+                              'experiences',
+                              `Write professional work experience bullet points for a ${exp.position} at ${exp.company}. Skills: ${resume.skills}. Focus on achievements with metrics.`
+                            )}
+                            disabled={loading.experience}
+                          >
+                            {loading.experience ? 'Generating...' : 'AI Generate'}
+                          </button>
+                          <button
+                            className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                            onClick={() => handleImproveSection('experiences', exp.description)}
+                            disabled={loading.improve}
+                          >
+                            {loading.improve ? 'Improving...' : 'Improve'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Education
-              </label>
-              <textarea
-                className="w-full border p-2 rounded min-h-[100px]"
-                name="education"
-                placeholder="University Name, Degree\nYear of Graduation..."
-                value={resume.education}
-                onChange={handleChange}
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  className="!bg-green-600 text-white px-3 py-1 rounded text-sm"
-                  onClick={handleGenerateEducation}
-                  disabled={loading.education}
-                >
-                  {loading.education ? "Generating..." : "AI Format Education"}
-                </button>
-                <button
-                  className="!bg-purple-600 text-white px-3 py-1 rounded text-sm"
-                  onClick={() => handleImproveSection("education")}
-                  disabled={loading.improve}
-                >
-                  {loading.improve ? "Improving..." : "Improve Section"}
-                </button>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-600">Education</h2>
+              
+              <div className="space-y-4">
+                <textarea
+                  className="w-full border p-2 rounded min-h-[120px] focus:ring-2 focus:ring-indigo-200"
+                  name="education"
+                  value={resume.education}
+                  onChange={handleChange}
+                  placeholder="University Name, Degree, Year..."
+                />
+                <div className="flex gap-2">
+                  <button
+                    className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                    onClick={() => handleGenerate(
+                      'education',
+                      `Format this education section professionally: ${resume.education || 'No education details yet'}. Include degree, university, and year.`
+                    )}
+                    disabled={loading.education}
+                  >
+                    {loading.education ? 'Generating...' : 'AI Generate'}
+                  </button>
+                  <button
+                    className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                    onClick={() => handleImproveSection('education', resume.education)}
+                    disabled={loading.improve}
+                  >
+                    {loading.improve ? 'Improving...' : 'Improve'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Projects & Export */}
+          <div className="space-y-6 lg:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-600">Projects</h2>
+              
+              <div className="space-y-4">
+                <textarea
+                  className="w-full border p-2 rounded min-h-[120px] focus:ring-2 focus:ring-indigo-200"
+                  name="projects"
+                  value={resume.projects}
+                  onChange={handleChange}
+                  placeholder="Project Name, Technologies Used, Description..."
+                />
+                <div className="flex gap-2">
+                  <button
+                    className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                    onClick={() => handleGenerate(
+                      'projects',
+                      `Write 2-3 professional project descriptions for a resume. Skills: ${resume.skills}. Include technologies used and outcomes.`
+                    )}
+                    disabled={loading.projects}
+                  >
+                    {loading.projects ? 'Generating...' : 'AI Generate'}
+                  </button>
+                  <button
+                    className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                    onClick={() => handleImproveSection('projects', resume.projects)}
+                    disabled={loading.improve}
+                  >
+                    {loading.improve ? 'Improving...' : 'Improve'}
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Export Options */}
-            <div className="mt-8 p-4 border rounded bg-gray-50">
-              <h3 className="font-medium mb-2">Export Options</h3>
-              <div className="flex items-center gap-4">
-                <select
-                  className="border p-2 rounded"
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value)}
-                >
-                  <option value="pdf">PDF</option>
-                  <option value="docx">Word</option>
-                  <option value="txt">Plain Text</option>
-                </select>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-600">Certifications</h2>
+              
+              <div>
+                <textarea
+                  className="w-full border p-2 rounded min-h-[80px] focus:ring-2 focus:ring-indigo-200"
+                  name="certifications"
+                  value={resume.certifications}
+                  onChange={handleChange}
+                  placeholder="Certification Name, Issuing Organization, Year..."
+                />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-600">Export Resume</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Select Format</label>
+                  <select 
+                    className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-200"
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="docx">Word Document</option>
+                    <option value="txt">Plain Text</option>
+                  </select>
+                </div>
+                
                 <button
-                  className="!bg-indigo-600 text-white px-4 py-2 rounded"
+                  className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 flex items-center justify-center gap-2"
                   onClick={handleExport}
+                  disabled={!resume.name || !resume.email}
                 >
-                  Export Resume
+                  <span>Export Resume</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
                 </button>
               </div>
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'preview' ? (
         /* Preview Tab */
-        <div className="bg-white p-6 rounded shadow-md">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold">{resume.name || "Your Name"}</h2>
-            <div className="flex justify-center gap-4 text-sm text-gray-600">
-              {resume.email && <span>{resume.email}</span>}
-              {resume.phone && <span>{resume.phone}</span>}
+        <div className="flex justify-center">
+          <div 
+            ref={previewRef}
+            className={`w-full max-w-2xl p-8 rounded-lg shadow-lg ${templates.find(t => t.id === selectedTemplate)?.class || 'bg-white'}`}
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold">{resume.name || 'Your Name'}</h2>
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-gray-600 mt-2">
+                {resume.email && <span>{resume.email}</span>}
+                {resume.phone && <span>{resume.phone}</span>}
+                {resume.address && <span>{resume.address}</span>}
+              </div>
             </div>
-          </div>
 
-          {resume.summary && (
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold border-b pb-1 mb-2">
-                Professional Summary
-              </h3>
-              <p className="whitespace-pre-line">{resume.summary}</p>
-            </div>
-          )}
-
-          {resume.skills && (
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold border-b pb-1 mb-2">
-                Skills
-              </h3>
-              <p className="whitespace-pre-line">{resume.skills}</p>
-            </div>
-          )}
-
-          {resume.experience && (
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold border-b pb-1 mb-2">
-                Work Experience
-              </h3>
-              <div className="whitespace-pre-line">{resume.experience}</div>
-            </div>
-          )}
-
-          {resume.education && (
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold border-b pb-1 mb-2">
-                Education
-              </h3>
-              <div className="whitespace-pre-line">{resume.education}</div>
-            </div>
-          )}
-
-          {!resume.summary &&
-            !resume.skills &&
-            !resume.experience &&
-            !resume.education && (
-              <p className="text-gray-500 text-center py-8">
-                Fill out the form to see your resume preview
-              </p>
+            {resume.summary && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">PROFESSIONAL SUMMARY</h3>
+                <p className="whitespace-pre-line text-sm">{resume.summary}</p>
+              </div>
             )}
+
+            {resume.skills && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">SKILLS</h3>
+                <p className="whitespace-pre-line text-sm">{resume.skills}</p>
+              </div>
+            )}
+
+            {resume.experiences.some(exp => exp.company || exp.position || exp.description) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">WORK EXPERIENCE</h3>
+                {resume.experiences.map((exp, index) => (
+                  (exp.company || exp.position || exp.description) && (
+                    <div key={index} className="mb-4">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium">{exp.company}</h4>
+                        {exp.duration && <span className="text-sm text-gray-600">{exp.duration}</span>}
+                      </div>
+                      {exp.position && <p className="text-sm italic mb-2">{exp.position}</p>}
+                      {exp.description && (
+                        <div className="whitespace-pre-line text-sm pl-4">
+                          {exp.description.split('\n').map((item, i) => (
+                            <p key={i} className="mb-1">{item}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+
+            {resume.education && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">EDUCATION</h3>
+                <div className="whitespace-pre-line text-sm">{resume.education}</div>
+              </div>
+            )}
+
+            {resume.projects && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">PROJECTS</h3>
+                <div className="whitespace-pre-line text-sm">{resume.projects}</div>
+              </div>
+            )}
+
+            {resume.certifications && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">CERTIFICATIONS</h3>
+                <div className="whitespace-pre-line text-sm">{resume.certifications}</div>
+              </div>
+            )}
+
+            {resume.languages && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold border-b pb-1 mb-2">LANGUAGES</h3>
+                <p className="text-sm">{resume.languages}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Templates Tab */
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {templates.map(template => (
+            <div 
+              key={template.id}
+              className={`p-6 rounded-lg cursor-pointer transition-all ${selectedTemplate === template.id ? 'ring-4 ring-indigo-500' : ''}`}
+              onClick={() => setSelectedTemplate(template.id)}
+            >
+              <div className={`${template.class} p-6 rounded shadow h-80 overflow-y-auto`}>
+                <h3 className="text-xl font-bold mb-2">Sample Resume</h3>
+                <p className="text-sm mb-4">This is a preview of the {template.name} template</p>
+                <div className="h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500">
+                  Template Preview
+                </div>
+              </div>
+              <div className="mt-4 text-center font-medium">
+                {template.name} Template
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
