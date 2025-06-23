@@ -124,9 +124,9 @@ export default function Resume() {
   };
 
   const templates = [
-    { id: 'professional', name: 'Professional', class: 'bg-white text-gray-800' },
-    { id: 'modern', name: 'Modern', class: 'bg-gray-50 text-gray-800' },
-    { id: 'creative', name: 'Creative', class: 'bg-indigo-50 text-gray-800' }
+    { id: 'professional', name: 'Professional', class: '!bg-white text-gray-800' },
+    { id: 'modern', name: 'Modern', class: '!bg-gray-50 text-gray-800' },
+    { id: 'creative', name: 'Creative', class: '!bg-indigo-50 text-gray-800' }
   ];
 
   return (
@@ -162,7 +162,7 @@ export default function Resume() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Personal Info */}
           <div className="space-y-6 lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-indigo-600">Personal Information</h2>
               
               <div className="space-y-4">
@@ -219,7 +219,7 @@ export default function Resume() {
                   />
                   <div className="flex gap-2 mt-2">
                     <button
-                      className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                      className="!bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:!bg-indigo-700 disabled:opacity-50"
                       onClick={() => handleGenerate(
                         'summary', 
                         `Write a professional 3-sentence summary for ${resume.name || 'a candidate'} with skills: ${resume.skills || 'various skills'}. Focus on achievements.`
@@ -229,7 +229,7 @@ export default function Resume() {
                       {loading.summary ? 'Generating...' : 'AI Generate'}
                     </button>
                     <button
-                      className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                      className="!bg-purple-600 text-white px-3 py-1 rounded text-sm hover:!bg-purple-700 disabled:opacity-50"
                       onClick={() => handleImproveSection('summary', resume.summary)}
                       disabled={loading.improve}
                     >
@@ -240,7 +240,7 @@ export default function Resume() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-indigo-600">Skills & Languages</h2>
               
               <div className="space-y-4">
@@ -271,7 +271,7 @@ export default function Resume() {
 
           {/* Middle Column - Experience & Education */}
           <div className="space-y-6 lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-indigo-600">Work Experience</h2>
                 <button 
@@ -337,7 +337,7 @@ export default function Resume() {
                         />
                         <div className="flex gap-2 mt-2">
                           <button
-                            className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                            className="!bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:!bg-indigo-700 disabled:opacity-50"
                             onClick={() => handleGenerate(
                               'experiences',
                               `Write professional work experience bullet points for a ${exp.position} at ${exp.company}. Skills: ${resume.skills}. Focus on achievements with metrics.`
@@ -347,7 +347,7 @@ export default function Resume() {
                             {loading.experience ? 'Generating...' : 'AI Generate'}
                           </button>
                           <button
-                            className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                            className="!bg-purple-600 text-white px-3 py-1 rounded text-sm hover:!bg-purple-700 disabled:opacity-50"
                             onClick={() => handleImproveSection('experiences', exp.description)}
                             disabled={loading.improve}
                           >
@@ -361,7 +361,7 @@ export default function Resume() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-indigo-600">Education</h2>
               
               <div className="space-y-4">
@@ -374,7 +374,7 @@ export default function Resume() {
                 />
                 <div className="flex gap-2">
                   <button
-                    className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                    className="!bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:!bg-indigo-700 disabled:opacity-50"
                     onClick={() => handleGenerate(
                       'education',
                       `Format this education section professionally: ${resume.education || 'No education details yet'}. Include degree, university, and year.`
@@ -384,7 +384,7 @@ export default function Resume() {
                     {loading.education ? 'Generating...' : 'AI Generate'}
                   </button>
                   <button
-                    className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                    className="!bg-purple-600 text-white px-3 py-1 rounded text-sm hover:!bg-purple-700 disabled:opacity-50"
                     onClick={() => handleImproveSection('education', resume.education)}
                     disabled={loading.improve}
                   >
@@ -397,7 +397,7 @@ export default function Resume() {
 
           {/* Right Column - Projects & Export */}
           <div className="space-y-6 lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-indigo-600">Projects</h2>
               
               <div className="space-y-4">
@@ -410,7 +410,7 @@ export default function Resume() {
                 />
                 <div className="flex gap-2">
                   <button
-                    className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                    className="!bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:!bg-indigo-700 disabled:opacity-50"
                     onClick={() => handleGenerate(
                       'projects',
                       `Write 2-3 professional project descriptions for a resume. Skills: ${resume.skills}. Include technologies used and outcomes.`
@@ -420,7 +420,7 @@ export default function Resume() {
                     {loading.projects ? 'Generating...' : 'AI Generate'}
                   </button>
                   <button
-                    className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+                    className="!bg-purple-600 text-white px-3 py-1 rounded text-sm hover:!bg-purple-700 disabled:opacity-50"
                     onClick={() => handleImproveSection('projects', resume.projects)}
                     disabled={loading.improve}
                   >
@@ -430,7 +430,7 @@ export default function Resume() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-indigo-600">Certifications</h2>
               
               <div>
@@ -444,7 +444,7 @@ export default function Resume() {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="!bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-indigo-600">Export Resume</h2>
               
               <div className="space-y-4">
@@ -462,7 +462,7 @@ export default function Resume() {
                 </div>
                 
                 <button
-                  className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 flex items-center justify-center gap-2"
+                  className="w-full !bg-green-600 text-white py-2 rounded hover:!bg-green-700 flex items-center justify-center gap-2"
                   onClick={handleExport}
                   disabled={!resume.name || !resume.email}
                 >
@@ -480,7 +480,7 @@ export default function Resume() {
         <div className="flex justify-center">
           <div 
             ref={previewRef}
-            className={`w-full max-w-2xl p-8 rounded-lg shadow-lg ${templates.find(t => t.id === selectedTemplate)?.class || 'bg-white'}`}
+            className={`w-full max-w-2xl p-8 rounded-lg shadow-lg ${templates.find(t => t.id === selectedTemplate)?.class || '!bg-white'}`}
           >
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold">{resume.name || 'Your Name'}</h2>
@@ -570,7 +570,7 @@ export default function Resume() {
               <div className={`${template.class} p-6 rounded shadow h-80 overflow-y-auto`}>
                 <h3 className="text-xl font-bold mb-2">Sample Resume</h3>
                 <p className="text-sm mb-4">This is a preview of the {template.name} template</p>
-                <div className="h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500">
+                <div className="h-48 !bg-gray-200 rounded flex items-center justify-center text-gray-500">
                   Template Preview
                 </div>
               </div>
