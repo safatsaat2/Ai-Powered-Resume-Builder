@@ -1,14 +1,20 @@
 import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import Portfolio from './pages/portfolio';
+import CoverLetter from './pages/cover-letter';
+import Resume from './pages/resume';
 
 function App() {
-
   return (
-    <>
-      <h1 class="text-3xl font-bold underline">
-    Hello world!
-  </h1>
-    </>
-  )
+    <Router>
+      <Routes>
+        <Route path="/" element={< Resume />} />
+        <Route path="/portfolio" element={<Portfolio />} />
+        <Route path="/cover-letter" element={<CoverLetter />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
